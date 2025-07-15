@@ -9,9 +9,9 @@ LCAmle/
 ├── src/
 │   ├── params/          # Parameter classes
 │   │   ├── BaseParam.m      # Abstract base class
-│   │   ├── StandardParam.m  # Standard LCA model ($\kappa$, $\beta$, $\xi^2$, $I$) parameterization
+│   │   ├── StandardParam.m  # Standard LCA model (κ, β, ξ², I) parameterization
 │   │   ├── LogParam.m       # Modified LCA model parameterization
-│   │   └── ScaledParam.m     # Alternative scaled type ($\bar{\kappa}=\kappa-\beta$, $\gamma = N\beta/\bar{\kappa}$) parameterization
+│   │   └── ScaledParam.m     # Alternative scaled type (κ̄=κ-β, γ=Nβ/κ̄) parameterization
 │   ├── simulation/      # Data simulation
 │   │   ├── simulate_LCA_data.m           # Simple wrapper
 │   │   └── simulate_LCA_data_taylor15.m  # strong order 1.5 Taylor scheme implementation
@@ -29,22 +29,22 @@ LCAmle/
 
 The LCA model for N alternatives follows the stochastic differential equation:
 
-$$
-dx_i = [I_i - \kappa x_i - \beta \sum_{j\neq i}x_j]dt + \xi dW_i
-$$
+```math
+dx_i = \left[I_i - \kappa x_i - \beta \sum_{j\neq i}x_j\right]dt + \xi dW_i
+```
 
 where:
-- **$x_i(t)$**: Evidence for alternative i at time t
-- **$I_i$**: Input/drift rate for alternative i
-- **$\kappa$**: Leak/decay parameter ($\kappa > 0$)
-- **$\beta$**: Lateral inhibition strength
-- **$\xi$**: Noise intensity (diffusion coefficient)
-- **$W_i$**: Independent Wiener processes
+- **$`x_i(t)`$**: Evidence for alternative i at time t
+- **$`I_i`$**: Input/drift rate for alternative i
+- **$`\kappa`$**: Leak/decay parameter ($`\kappa > 0`$)
+- **$`\beta`$**: Lateral inhibition strength
+- **$`\xi`$**: Noise intensity (diffusion coefficient)
+- **$`W_i`$**: Independent Wiener processes
 
 ## Available Parameterizations
 
 ### 1. Standard LCA model Parameterization
-**Parameters**: [$\kappa$, $\beta$, $\xi^2$, $I_1$, ..., $I_N$]
+**Parameters**: [$`\kappa`$, $`\beta`$, $`\xi^2`$, $`I_1`$, ..., $`I_N`$]
 
 This is the most intuitive parameterization using the original model parameters.
 
@@ -54,9 +54,12 @@ results = estimate_LCA(data, tau, param);
 ```
 
 ### 2. Modified LCA model parameterization
-**Parameters**: [$\kappa$, $\beta$, $\xi^2$, $\tilde{I}_1$, ..., $\tilde{I}_N$]
+**Parameters**: [$`\kappa`$, $`\beta`$, $`\xi^2`$, $`\tilde{I}_1`$, ..., $`\tilde{I}_N`$]
 
-where $\tilde{I}_i = I_i + \frac{1}{2}\xi^2$
+where 
+```math
+\tilde{I}_i = I_i + \frac{1}{2}\xi^2
+```
 
 This parameterization follows Lo and Ip (2021) modification to introduce a log-normality of the LCA model to ensure positive definiteness. The estimated parameter can be easily obtained by making adjustment to the drift. 
 
@@ -66,15 +69,19 @@ results = estimate_LCA(data, tau, param);
 ```
 
 ### 3. Scaled Parameterization
-**Parameters**: [$\bar{\kappa}$, $\gamma$, $\xi^2$, $\mu_1$, ..., $\mu_N$]
+**Parameters**: [$`\bar{\kappa}`$, $`\gamma`$, $`\xi^2`$, $`\mu_1`$, ..., $`\mu_N`$]
 
 where:
-- $\bar{\kappa} = \kappa - \beta$
-- $\gamma = \beta/\bar{\kappa} = \beta/(\kappa-\beta)$
-- $\mu_i = \tilde{I}_i/\bar{\kappa}$
+```math
+\begin{align}
+\bar{\kappa} &= \kappa - \beta \\
+\gamma &= \beta/\bar{\kappa} = \beta/(\kappa-\beta) \\
+\mu_i &= I_i/\bar{\kappa}
+\end{align}
+```
 
 This parameterization:
-- Separates timescaled $\bar{\kappa}$ from competition structure ($\gamma$)
+- Separates timescaled $`\bar{\kappa}`$ from competition structure ($`\gamma`$)
 
 ```matlab
 param = ScaledParam(N, tau);
@@ -161,44 +168,48 @@ data = simulate_LCA_data_taylor15(T, N, tau, kappa, beta, xi_squared, I, x0)
 **Algorithm:**
 The Taylor 1.5 scheme provides higher accuracy than Euler-Maruyama by including additional stochastic integrals:
 
-$$
+```math
 \begin{aligned}
 x_{i}^{t+\Delta t} = & x_i^t + a_i \Delta t + \xi\Delta W_i - \frac{1}{2}\left\{(\kappa-\beta)a_i + \beta \sum_{j=1}^N a_j \right\} \left(\Delta t\right)^2 \\
 &-\xi\left\{(\kappa-\beta)\Delta Z_i + \beta \sum_{j=1}^N \Delta Z_j \right\}
 \end{aligned}
-$$
+```
 
 where
 
-- $a_i = \left\{(\kappa-\beta)x_i + \beta \displaystyle \sum_{j=1}^N x_j \right\}$
-- $\Delta W_i = U_{i,1} \sqrt{\Delta t}$
-- $\Delta Z_i = \dfrac{1}{2} \left(\Delta t\right)^{3/2}\left(U_{i,1} + \dfrac{1}{\sqrt{3}}U_{i,2}\right)$
+```math
+\begin{align}
+a_i &= \left\{(\kappa-\beta)x_i + \beta \displaystyle \sum_{j=1}^N x_j \right\} \\
+\Delta W_i &= U_{i,1} \sqrt{\Delta t} \\
+\Delta Z_i &= \dfrac{1}{2} \left(\Delta t\right)^{3/2}\left(U_{i,1} + \dfrac{1}{\sqrt{3}}U_{i,2}\right)
+\end{align}
+```
 
-$U_{i,1}$ and $U_{i,2}$ are uncorrelated random numbers drawn from a normal distribution with zero mean and unit variance whilst $\Delta Z_i$ is normally distributed with zero mean, variance $E((\Delta Z_i)^2) = \frac{1}{3}\left(\Delta t\right)^3$ and covariance $E(\Delta Z_i\Delta W_i) = \frac{1}{2}\left(\Delta t\right)^2$.
+$`U_{i,1}`$ and $`U_{i,2}`$ are uncorrelated random numbers drawn from a normal distribution with zero mean and unit variance whilst $`\Delta Z_i`$ is normally distributed with zero mean, variance $`E((\Delta Z_i)^2) = \frac{1}{3}\left(\Delta t\right)^3`$ and covariance $`E(\Delta Z_i\Delta W_i) = \frac{1}{2}\left(\Delta t\right)^2`$.
 
 ## Initial Parameter Estimation Method
 
 The toolbox uses a regression-based approach to compute initial parameter guesses:
 
-1. **Sum Process Regression**: For the sum $S(t) = \dfrac{1}{N}\sum_{i=1}^N x_i(t)$, $\bar{I} = \dfrac{1}{N}\sum_{i=1}^N I_i$
+1. **Sum Process Regression**: For the sum $`S(t) = \dfrac{1}{N}\sum_{i=1}^N x_i(t)`$, $`\bar{I} = \dfrac{1}{N}\sum_{i=1}^N I_i`$
 
-   $$
-   dS \approx \left\{\bar{I} - \left[\kappa + \beta (N-1)\right] S\right\}dt + noise
-   $$
+```math
+dS \approx \left\{\bar{I} - \left[\kappa + \beta (N-1)\right] S\right\}dt + \text{noise}
+```
 
-   Linear regression gives estimates for $\bar{I}$ and $\kappa+(N-1)\beta$.
+Linear regression gives estimates for $`\bar{I}`$ and $`\kappa+(N-1)\beta`$.
 
-2. **Mean Difference Regression**: For differences $D_{i}(t) = x_i(t) - S(t)$
+2. **Mean Difference Regression**: For differences $`D_{i}(t) = x_i(t) - S(t)`$
 
-   $$
-   dD_{i} \approx [(I_i - \bar{I}) - (\kappa - \beta)D_{i}]dt + noise
-   $$
+```math
+dD_{i} \approx [(I_i - \bar{I}) - (\kappa - \beta)D_{i}]dt + \text{noise}
+```
 
-   Provides estimates for input differences $I_i - \bar{I}$ and $\kappa - \beta$.
+Provides estimates for input differences $`I_i - \bar{I}`$ and $`\kappa - \beta`$.
 
-3. **Noise Estimation**: Sum of variance of regression residuals estimates $\xi^2$.
+3. **Noise Estimation**: Sum of variance of regression residuals estimates $`\xi^2`$.
 
-4. **Parameter Recovery**: Solve linear system to extract $\kappa$, $\beta$, and individual $I_i$ values.
+4. **Parameter Recovery**: Solve linear system to extract $`\kappa`$, $`\beta`$, and individual $`I_i`$ values.
 
 ## Creating Custom Parameterizations
 
@@ -242,58 +253,64 @@ end
 
 ### 3. Chain Rule for Parameter Transformations
 
-When creating custom parameterizations, you need to transform between your parameters $\theta$ and the internal parameters $\psi$ that `nlog_LCA` expects. The chain rule ensures correct gradient and Hessian computations.
+When creating custom parameterizations, you need to transform between your parameters $`\theta`$ and the internal parameters $`\psi`$ that `nlog_LCA` expects. The chain rule ensures correct gradient and Hessian computations.
 
 #### Mathematical Foundation
 
-For a transformation $\psi = T(\theta)$, where:
-- $\theta$ = your custom parameters
-- $\psi$ = internal parameters expected by `nlog_LCA`
-- $f(\theta) = \ell(\psi(\theta))$ = negative log-likelihood
+For a transformation $`\psi = T(\theta)`$, where:
+- $`\theta`$ = your custom parameters
+- $`\psi`$ = internal parameters expected by `nlog_LCA`
+- $`f(\theta) = \ell(\psi(\theta))`$ = negative log-likelihood
 
 The chain rule gives:
-- **Gradient**: $\nabla_\theta f = J^T \nabla_\psi \ell$
-- **Hessian**: $H_\theta = J^T H_\psi J + \sum_{k=1}^{n_\psi} \frac{\partial f}{\partial \psi_k} \frac{\partial^2 \psi_k}{\partial \theta \partial \theta^T}$
+- **Gradient**: $`\displaystyle \nabla_\theta f = J^T \nabla_\psi \ell`$
+- **Hessian**: $`\displaystyle H_\theta = J^T H_\psi J + \sum_{k=1}^{n_\psi} \frac{\partial f}{\partial \psi_k} \frac{\partial^2 \psi_k}{\partial \theta \partial \theta^T}`$
 
-where $J = \frac{\partial \psi}{\partial \theta}$ is the Jacobian matrix. The second term in the Hessian only appears for nonlinear transformations.
+where $`J = \dfrac{\partial \psi}{\partial \theta}`$ is the Jacobian matrix. The second term in the Hessian only appears for nonlinear transformations.
 
 #### Example: Ratio Parameterization
 
-Consider the parameterization $\theta = [\kappa, \rho, \xi^2, \mu_1, ..., \mu_N]$ where:
-- $\rho = \beta/\kappa$ (inhibition-to-leak ratio)
-- $\mu_i = I_i/\kappa$ (scaled inputs)
+Consider the parameterization $`\theta = [\kappa, \rho, \xi^2, \mu_1, ..., \mu_N]`$ where:
+- $`\rho = \beta/\kappa`$ (inhibition-to-leak ratio)
+- $`\mu_i = I_i/\kappa`$ (scaled inputs)
 
-Since `nlog_LCA` internally expects $[\kappa-\beta, \kappa+(N-1)\beta, \xi^2, I_1, ..., I_N]$, we need two transformations:
-1. From your parameters $\theta$ to standard parameters $[\kappa, \beta, \xi^2, I]$
+Since `nlog_LCA` internally expects $`[\kappa-\beta, \kappa+(N-1)\beta, \xi^2, I_1, ..., I_N]`$, we need two transformations:
+1. From your parameters $`\theta`$ to standard parameters $`[\kappa, \beta, \xi^2, I]`$
 2. From standard to internal (handled by StandardParam)
 
 **Step 1: Transform to standard parameters**
-$$\begin{align}
+```math
+\begin{align}
 \kappa &= \theta_1 \\
 \beta &= \kappa \cdot \rho = \theta_1 \cdot \theta_2 \\
 \xi^2 &= \theta_3 \\
 I_i &= \kappa \cdot \mu_i = \theta_1 \cdot \theta_{3+i} \quad \text{for } i = 1, ..., N
-\end{align}$$
+\end{align}
+```
 
 **Step 2: Compute the Jacobian**
-$$J = \frac{\partial[\kappa, \beta, \xi^2, I]}{\partial\theta} = \begin{pmatrix}
+```math
+J = \frac{\partial[\kappa, \beta, \xi^2, I]}{\partial\theta} = \begin{pmatrix}
 1 & 0 & 0 & 0 & \cdots & 0 \\
 \rho & \kappa & 0 & 0 & \cdots & 0 \\
 0 & 0 & 1 & 0 & \cdots & 0 \\
 \mu_1 & 0 & 0 & \kappa & \cdots & 0 \\
 \vdots & \vdots & \vdots & \vdots & \ddots & \vdots \\
 \mu_N & 0 & 0 & 0 & \cdots & \kappa
-\end{pmatrix}$$
+\end{pmatrix}
+```
 
 **Step 3: Handle second-order derivatives for the Hessian**
 For nonlinear transformations, the Hessian requires additional terms:
-$$H_\theta = J^T H_\psi J + \sum_{k=1}^{n_\psi} g_{\psi,k} \frac{\partial^2 \psi_k}{\partial \theta \partial \theta^T}$$
+```math
+H_\theta = J^T H_\psi J + \sum_{k=1}^{n_\psi} g_{\psi,k} \frac{\partial^2 \psi_k}{\partial \theta \partial \theta^T}
+```
 
-where $g_{\psi,k}$ is the k-th component of the gradient $\nabla_\psi f$ (i.e., `g_standard(k)` in the code).
+where $`g_{\psi,k}`$ is the k-th component of the gradient $`\nabla_\psi f`$ (i.e., `g_standard(k)` in the code).
 
 The non-zero second derivatives are:
-- $\frac{\partial^2 \beta}{\partial \kappa \partial \rho} = 1$
-- $\frac{\partial^2 I_i}{\partial \kappa \partial \mu_i} = 1$
+- $`\frac{\partial^2 \beta}{\partial \kappa \partial \rho} = 1`$
+- $`\frac{\partial^2 I_i}{\partial \kappa \partial \mu_i} = 1`$
 
 All other second derivatives are zero.
 
@@ -494,14 +511,40 @@ end
 To use this toolbox with Bayesian methods, the log-likelihood, gradient, and Hessian function might be useful:
 
 ```matlab
+% Setup
+N = size(data, 2);  % Number of alternatives
+tau = 0.01;         % Your time step
+
+% Create parameterization object
+param_obj = StandardParam(N, tau);  % or LogParam, ScaledParam, etc.
+
+% Define parameter vector based on your parameterization
+% For StandardParam: params = [kappa, beta, xi_squared, I1, I2, ..., IN]
+params = [1.5, 0.3, 0.25, 0.8, 0.6, 0.7];  % Example for N=3
+
 % Get log-likelihood and derivatives
-param_obj = StandardParam(N, tau);
 [neg_log_lik, neg_grad, neg_hess] = param_obj.compute_likelihood(params, data);
 
 % For Bayesian inference
 log_likelihood = -neg_log_lik;
 gradient = -neg_grad;
 hessian = -neg_hess;
+
+% Example: Define log posterior for HMC/NUTS
+log_posterior = @(theta) compute_log_posterior(theta, data, tau, param_obj, prior);
+
+function [log_p, grad_log_p] = compute_log_posterior(theta, data, tau, param_obj, prior)
+    % Likelihood
+    [neg_log_lik, neg_grad] = param_obj.compute_likelihood(theta, data);
+    
+    % Prior (example: normal priors)
+    log_prior = sum(log(normpdf(theta, prior.mean, prior.std)));
+    grad_log_prior = -(theta - prior.mean) ./ (prior.std.^2);
+    
+    % Posterior
+    log_p = -neg_log_lik + log_prior;
+    grad_log_p = -neg_grad + grad_log_prior;
+end
 ```
 
 **Important**: The chain rule is already handled within each parameterization's `compute_likelihood` method. For custom parameterizations, ensure you properly implement the Jacobian transformation as shown in the examples above.

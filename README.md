@@ -1,5 +1,9 @@
 # LCAmle - Leaky Competing Accumulator Maximum Likelihood Estimation
 
+This repository implements the modified Leaky Competing Accumulator (LCA) model described in:
+
+**Lo, C.-F., & Ip, H.-Y. (2021).** Modified leaky competing accumulator model of decision making with multiple alternatives: the Lie-algebraic approach. *Scientific Reports*, 11, 10923. https://doi.org/10.1038/s41598-021-90356-7
+
 A MATLAB toolbox for maximum likelihood estimation of the Leaky Competing Accumulator (LCA) model parameters.
 
 ## Project Structure
@@ -557,3 +561,21 @@ end
 ## License
 
 See LICENSE file for details.
+
+## Reference
+
+If you use this code in your research, please cite:
+
+```bibtex
+@article{lo2021modified,
+  title={Modified leaky competing accumulator model of decision making with multiple alternatives: the Lie-algebraic approach},
+  author={Lo, Chi-Fai and Ip, Ho-Yan},
+  journal={Scientific Reports},
+  volume={11},
+  number={1},
+  pages={10923},
+  year={2021},
+  publisher={Nature Publishing Group},
+  doi={10.1038/s41598-021-90356-7}
+}
+```
